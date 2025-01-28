@@ -4,11 +4,37 @@ import { useState } from "react";
 
 export default function Index() {
   const [profilName, setProfilName] = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  const GoToProfil = () => {
-    router.push('/profil');
+  const GoToProfil = async () => {
+    try {
+      const response = await fetch(`https://api.intra.42.fr/v2/users/${profilName}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`,
+          "Content-Type": "application/json",
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(data);
+      console.log("ICI\n\n");
+      console.log(data["login"]);
+      
+
+    } catch (error) {
+      setError("Erreur ce profil n'existe pas");
+      setTimeout(() => {
+        setError("");
+      }, 3000)
+    }
   };
+
 
   return (
     <View style={styles.container}>
@@ -16,7 +42,7 @@ export default function Index() {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.inputText}
-          onChangeText={setProfilName}
+          onChangeText={(text) => setProfilName(text.toLowerCase())}
           placeholder="Nom du profil"
           placeholderTextColor="#E3E3E3"
         />
@@ -28,6 +54,9 @@ export default function Index() {
           />
         </TouchableOpacity>
       </View>
+      { error ? (
+        <Text style={styles.errorMessage}>{error}</Text>
+      ) : null}
     </View>
   );
 }
@@ -55,6 +84,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#313131",
     color: "#E3E3E3",
     height: 50,
+    width: 150,
     paddingHorizontal: 30,
     borderRadius: 15,
   },
@@ -70,6 +100,17 @@ const styles = StyleSheet.create({
   buttonImage: {
     width: 30,
     height: 30
+  },
+  errorMessage: {
+    width: 250,
+    backgroundColor: "red",
+    borderRadius: 10,
+    color: "#E3E3E3",
+    fontSize: 15,
+    fontWeight: "bold",
+    padding: 5,
+    marginTop: 30,
+    textAlign: "center"
   }
 
 });
