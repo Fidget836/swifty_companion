@@ -18,17 +18,17 @@ export default function Index() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw (response.status);
       } else {
         router.push(`/profil?profilName=${profilName}`);
       }
 
     } catch (error) {
-      if (error == 401) {
+      if (error === 401) {
         setError("Token expiré");
       } else {
         setError("Erreur ce profil n'existe pas");
-      }
+      } 
       
       setTimeout(() => {
         setError("");
