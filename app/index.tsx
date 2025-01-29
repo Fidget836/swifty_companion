@@ -43,7 +43,7 @@ export default function Index() {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.inputText}
-          onChangeText={(text) => setProfilName(text.toLowerCase())}
+          onChangeText={(text) => setProfilName(text.toLowerCase().trim())}
           placeholder="Nom du profil"
           placeholderTextColor="#E3E3E3"
         />
