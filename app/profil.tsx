@@ -73,21 +73,18 @@ export default function Profil() {
 
 
     const renderProjectItem = ({ item }: { item: any }) => {
-        console.log(item.final_mark);
-        
         if (item) {
             return (
                 <View style={styles.projectItem}>
                     <View style={styles.projectItemTop}>
                         <Text style={styles.profilText}>{item.name || "Unknown Project"}</Text>
-                            <Text style={styles.profilText}>Status: {item.validated ? "Réussi ✔" : "Échoué ✘"}</Text>
+                            <Text style={styles.profilText}>Status: {item.validated === true ? "Réussi ✔" : item.final_mark === null ? "En attente ⏳" : "Échoué ✘"}</Text>
                     </View>
 
                     <View style={styles.projectItemBottom}>
-                        <Text style={styles.profilText}>{item.final_mark || "0"}</Text>
+                        <Text style={styles.profilTextBarre}>{item.final_mark || "0"}</Text>
                         <View style={styles.barreLevel}>
-                            <View style={[styles.progressBarreLevel, {width: `${item.final_mark}%`}]}>
-
+                            <View style={[styles.progressBarreLevel, {width: `${item.final_mark ?? 0}%`}]}>
                             </View>
                         </View>
                     </View>
@@ -226,6 +223,11 @@ const styles = StyleSheet.create({
         color: "#E3E3E3",
         fontSize: 15,
       },
+      profilTextBarre: {
+        color: "#E3E3E3",
+        fontSize: 15,
+        width: 30,
+      },
       profilTextMini: {
         color: "#E3E3E3",
         fontSize: 10,
@@ -263,7 +265,7 @@ const styles = StyleSheet.create({
     },
     projectsContainer: {
         width: "80%",
-        height:  300,
+        height:  360,
         alignItems: "center",
         marginTop: 15,
     },
