@@ -1,7 +1,15 @@
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity } from "react-native";
 import { useEffect, useState } from "react";
 import { Link, useRouter } from "expo-router";
 import { useSearchParams } from "expo-router/build/hooks";
+
+interface Project {
+    name: string;
+    status: string;
+    cursus_ids: number;
+    validated: boolean;
+    final_mark: number;
+}
 
 export default function Profil() {
     const router = useRouter();
@@ -14,10 +22,16 @@ export default function Profil() {
     const [correctionPoint, setCorrectionPoint] = useState<number>(0);
     const [fullName, setFullName] = useState('');
     const [profilPicture, setProfilPicture] = useState('');
+    const [projectsCursus, setProjectsCursus] = useState<Project[]>([]);
+    const [projectsPiscine, setProjectsPiscine] = useState<Project[]>([]);
+    const [chooseCursus, setChooseCursus] = useState(true);
 
     useEffect(() => {
         const fetchProfilData = async () => {
             try {
+                setProjectsCursus([]);
+                setProjectsPiscine([]);
+                
                 const response = await fetch(`https://api.intra.42.fr/v2/users/${profilName}`, {
                     method: "GET",
                     headers: {
@@ -41,8 +55,13 @@ export default function Profil() {
                     setFullName(data.usual_full_name);
                     setCorrectionPoint(data.correction_point);
 
-                    console.log(data);
-                    
+                    for (let project of data.projects_users) {
+                        if (project.cursus_ids == 21) {
+                            setProjectsCursus(prevProjects => [...prevProjects, { name: project.project.name , status: project.status, cursus_ids: project.cursus_ids, validated: project["validated?"], final_mark: project.final_mark }]);
+                        } else if (project.cursus_ids == 9) {
+                            setProjectsPiscine(prevProjects => [...prevProjects, { name: project.project.name , status: project.status, cursus_ids: project.cursus_ids, validated: project["validated?"], final_mark: project.final_mark }]);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error(error);
@@ -51,6 +70,34 @@ export default function Profil() {
 
         fetchProfilData();
     }, []);
+
+
+    const renderProjectItem = ({ item }: { item: any }) => {
+        console.log(item.final_mark);
+        
+        if (item) {
+            return (
+                <View style={styles.projectItem}>
+                    <View style={styles.projectItemTop}>
+                        <Text style={styles.profilText}>{item.name || "Unknown Project"}</Text>
+                            <Text style={styles.profilText}>Status: {item.validated ? "Réussi ✔" : "Échoué ✘"}</Text>
+                    </View>
+
+                    <View style={styles.projectItemBottom}>
+                        <Text style={styles.profilText}>{item.final_mark || "0"}</Text>
+                        <View style={styles.barreLevel}>
+                            <View style={[styles.progressBarreLevel, {width: `${item.final_mark}%`}]}>
+
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            );
+        } else {
+            return (null);
+        }
+    };
+
 
     return (
         <View style={styles.container}>
@@ -95,6 +142,32 @@ export default function Profil() {
                     <Text style={styles.profilText}>Ev.P•{ correctionPoint }</Text>
                 </View>
             </View>
+
+            <View style={styles.projectsContainer}>
+
+                    <View style={styles.chooseCursus}>
+
+                        <View style={chooseCursus ? styles.activateCursus : styles.desactivateCursus}>
+                            <TouchableOpacity onPress={() => setChooseCursus(true)}>
+                            <Text style={styles.profilText}>42 Cursus</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={chooseCursus ? styles.desactivatePiscine : styles.activatePiscine}>
+                            <TouchableOpacity onPress={() => setChooseCursus(false)}>
+                            <Text style={styles.profilText}>Piscine</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                    </View>
+
+                <FlatList
+                    data={chooseCursus ? projectsCursus : projectsPiscine}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={renderProjectItem}
+                />
+            </View>
+
         </View>
     );
 }
@@ -177,6 +250,7 @@ const styles = StyleSheet.create({
     },
     progressBarreLevel: {
         height: "100%",
+        maxWidth: "100%",
         borderRadius: 5,
         backgroundColor: "#C67C4E",
         alignItems: "center",
@@ -186,5 +260,76 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: "bold",
         color: "#E3E3E3",
-    }
+    },
+    projectsContainer: {
+        width: "80%",
+        height:  300,
+        alignItems: "center",
+        marginTop: 15,
+    },
+    projectItem: {
+        width: "100%",
+        backgroundColor: "#313131",
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 15,
+    },
+    projectItemTop: {
+        flexDirection: "row",
+        alignContent: "center",
+        justifyContent: "space-around",
+        paddingBottom: 15,
+    },
+    projectItemBottom: {
+        flexDirection: "row",
+        alignContent: "center",
+        justifyContent: "center"
+    },
+    chooseCursus: {
+        width: 200,
+        height: 40,
+        borderWidth: 1.5,
+        borderColor: "#E3E3E3",
+        backgroundColor: "#313131",
+        borderRadius: 5,
+        marginBottom: 25,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    activateCursus: {
+        width: "50%",
+        height: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#C67C4E",
+        borderTopLeftRadius: 3,
+        borderBottomLeftRadius: 3,
+        borderTopRightRadius: 10,
+        borderBottomRightRadius: 10,
+    },
+    desactivateCursus: {
+        width: "50%",
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    activatePiscine: {
+        width: "50%",
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#C67C4E",
+        borderRadius: 3,
+        borderTopRightRadius: 3,
+        borderBottomRightRadius: 3,
+        borderTopLeftRadius: 10,
+        borderBottomLeftRadius: 10,
+    },
+    desactivatePiscine: {
+        width: "50%",
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+    },
 })
