@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity } from "react-native";
+import { View, ScrollView, Text, StyleSheet, Image, FlatList, TouchableOpacity } from "react-native";
 import { useEffect, useState } from "react";
 import { Link, useRouter } from "expo-router";
 import { useSearchParams } from "expo-router/build/hooks";
@@ -9,6 +9,11 @@ interface Project {
     cursus_ids: number;
     validated: boolean;
     final_mark: number;
+}
+
+interface Skill {
+    name: string;
+    level: number;
 }
 
 export default function Profil() {
@@ -24,6 +29,8 @@ export default function Profil() {
     const [profilPicture, setProfilPicture] = useState('');
     const [projectsCursus, setProjectsCursus] = useState<Project[]>([]);
     const [projectsPiscine, setProjectsPiscine] = useState<Project[]>([]);
+    const [skillsCursus, setSkillsCursus] = useState<Skill[]>([]);
+    const [skillsPiscine, setSkillsPiscine] = useState<Skill[]>([]);
     const [chooseCursus, setChooseCursus] = useState(true);
 
     useEffect(() => {
@@ -31,6 +38,8 @@ export default function Profil() {
             try {
                 setProjectsCursus([]);
                 setProjectsPiscine([]);
+                setSkillsCursus([]);
+                setSkillsPiscine([]);
                 
                 const response = await fetch(`https://api.intra.42.fr/v2/users/${profilName}`, {
                     method: "GET",
@@ -61,6 +70,14 @@ export default function Profil() {
                         } else if (project.cursus_ids == 9) {
                             setProjectsPiscine(prevProjects => [...prevProjects, { name: project.project.name , status: project.status, cursus_ids: project.cursus_ids, validated: project["validated?"], final_mark: project.final_mark }]);
                         }
+                    }
+
+                    for (let skill of data.cursus_users[0].skills) {
+                        setSkillsPiscine(prevSkill => [...prevSkill, {name: skill.name, level: skill.level}]);
+                    }
+
+                    for (let skill of data.cursus_users[1].skills) {
+                        setSkillsCursus(prevSkill => [...prevSkill, {name: skill.name, level: skill.level}]);
                     }
                 }
             } catch (error) {
@@ -95,9 +112,32 @@ export default function Profil() {
         }
     };
 
+    const renderSkillItem = ({ item }: { item: any }) => {
+        if (item) {
+            const lvl = Math.floor(item.level);
+            const nextLvl = (item.level - lvl) * 100;
+
+            return (
+                <View style={styles.skillItem}>
+                    <Text style={styles.skillSpecialText}>{item.name || "Unknown Skill"}</Text>
+
+                    <View style={styles.projectItemBottom}>
+                        <Text style={styles.profilTextBarre}>{lvl || "0"}</Text>
+                        <View style={styles.barreLevel}>
+                            <View style={[styles.progressBarreLevel, {width: `${nextLvl ?? 0}%`}]}>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            );
+        } else {
+            return (null);
+        }
+    };
+
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
             <View style={styles.headerContainer}>
                 <Link href="/" style={styles.headerText}>❮❮ Accueil</Link>
                 <Text style={styles.headerText}>Profil</Text>
@@ -140,41 +180,59 @@ export default function Profil() {
                 </View>
             </View>
 
-            <View style={styles.projectsContainer}>
 
-                    <View style={styles.chooseCursus}>
+            <View style={styles.infoContainer}>
 
-                        <View style={chooseCursus ? styles.activateCursus : styles.desactivateCursus}>
-                            <TouchableOpacity onPress={() => setChooseCursus(true)}>
-                            <Text style={styles.profilText}>42 Cursus</Text>
-                            </TouchableOpacity>
+                <View style={styles.projectsContainer}>
+
+                        <View style={styles.chooseCursus}>
+
+                            <View style={chooseCursus ? styles.activateCursus : styles.desactivateCursus}>
+                                <TouchableOpacity onPress={() => setChooseCursus(true)}>
+                                <Text style={styles.profilText}>42 Cursus</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={chooseCursus ? styles.desactivatePiscine : styles.activatePiscine}>
+                                <TouchableOpacity onPress={() => setChooseCursus(false)}>
+                                <Text style={styles.profilText}>Piscine</Text>
+                                </TouchableOpacity>
+                            </View>
+
                         </View>
 
-                        <View style={chooseCursus ? styles.desactivatePiscine : styles.activatePiscine}>
-                            <TouchableOpacity onPress={() => setChooseCursus(false)}>
-                            <Text style={styles.profilText}>Piscine</Text>
-                            </TouchableOpacity>
-                        </View>
+                    <FlatList
+                        data={chooseCursus ? projectsCursus : projectsPiscine}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={renderProjectItem}
+                        nestedScrollEnabled={true}
+                    />
 
-                    </View>
+                </View>
 
-                <FlatList
-                    data={chooseCursus ? projectsCursus : projectsPiscine}
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={renderProjectItem}
-                />
+                <View style={styles.skillsContainer}>
+                    <Text style={styles.skillText}>Skills</Text>
+                    <FlatList
+                        data={chooseCursus ? skillsCursus : skillsPiscine}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={renderSkillItem}
+                        nestedScrollEnabled={true}
+                    />
+                </View>
             </View>
-
-        </View>
+            </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        width: "100%",
-        alignItems: "center",
         backgroundColor: "#1d1d1d",
+    },
+    scrollContent: {
+          alignItems: "center",
+          justifyContent: "flex-start",
+          paddingBottom: 50,
       },
       headerContainer: {
         width: "100%",
@@ -223,6 +281,12 @@ const styles = StyleSheet.create({
         color: "#E3E3E3",
         fontSize: 15,
       },
+      skillSpecialText: {
+        color: "#E3E3E3",
+        fontSize: 15,
+        marginBottom: 10,
+        textAlign: "center",
+      },
       profilTextBarre: {
         color: "#E3E3E3",
         fontSize: 15,
@@ -263,11 +327,26 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#E3E3E3",
     },
-    projectsContainer: {
+    infoContainer: {
         width: "80%",
+    },
+    projectsContainer: {
+        width: "100%",
         height:  360,
         alignItems: "center",
         marginTop: 15,
+    },
+    skillsContainer: {
+        width: "100%",
+        height:  360,
+        alignItems: "center",
+        marginTop: 25,
+    },
+    skillText: {
+        color: "#E3E3E3",
+        fontSize: 15,
+        fontWeight: "bold",
+        margin: 10,
     },
     projectItem: {
         width: "100%",
@@ -333,5 +412,12 @@ const styles = StyleSheet.create({
         height: "100%",
         justifyContent: "center",
         alignItems: "center",
+    },
+    skillItem: {
+        width: "100%",
+        backgroundColor: "#313131",
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 15,
     },
 })
