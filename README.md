@@ -9,6 +9,8 @@ L'objectif principal de ce projet est de créer une interface mobile interactive
   - Les projets réalisés avec leur statut et leurs résultats.
   - Les compétences acquises avec leur niveau.
 
+![swifty-companion](https://github.com/user-attachments/assets/c92c5624-cb71-41fb-95d5-5c451e978d4d)
+
 Lancer le projet :
   - git clone git@github.com:Fidget836/swifty_companion.git
   - curl -X POST --data "grant_type=client_credentials&client_id=MY_AWESOME_UID&client_secret=MY_AWESOME_SECRET" https://api.intra.42.fr/oauth/token
