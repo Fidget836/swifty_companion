@@ -1,5 +1,5 @@
-import { View, ScrollView, Text, StyleSheet, Image, FlatList, TouchableOpacity } from "react-native";
-import { useEffect, useState } from "react";
+import { View, ScrollView, Text, StyleSheet, Image, FlatList, TouchableOpacity, LogBox } from "react-native";
+import { useEffect, useState, useRef } from "react";
 import { Link, useRouter } from "expo-router";
 import { useSearchParams } from "expo-router/build/hooks";
 
@@ -15,6 +15,8 @@ interface Skill {
     name: string;
     level: number;
 }
+
+LogBox.ignoreAllLogs(true);
 
 export default function Profil() {
     const router = useRouter();
@@ -32,6 +34,7 @@ export default function Profil() {
     const [skillsCursus, setSkillsCursus] = useState<Skill[]>([]);
     const [skillsPiscine, setSkillsPiscine] = useState<Skill[]>([]);
     const [chooseCursus, setChooseCursus] = useState(true);
+    const flatListRef = useRef<FlatList>(null);
 
     useEffect(() => {
         const fetchProfilData = async () => {
@@ -88,6 +91,10 @@ export default function Profil() {
         fetchProfilData();
     }, []);
 
+    const setNewChooseCursus = (bool: boolean) => {
+        setChooseCursus(bool);
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }
 
     const renderProjectItem = ({ item }: { item: any }) => {
         if (item) {
@@ -188,13 +195,13 @@ export default function Profil() {
                         <View style={styles.chooseCursus}>
 
                             <View style={chooseCursus ? styles.activateCursus : styles.desactivateCursus}>
-                                <TouchableOpacity onPress={() => setChooseCursus(true)}>
+                                <TouchableOpacity onPress={() => setNewChooseCursus(true)}>
                                 <Text style={styles.profilText}>42 Cursus</Text>
                                 </TouchableOpacity>
                             </View>
 
                             <View style={chooseCursus ? styles.desactivatePiscine : styles.activatePiscine}>
-                                <TouchableOpacity onPress={() => setChooseCursus(false)}>
+                                <TouchableOpacity onPress={() => setNewChooseCursus(false)}>
                                 <Text style={styles.profilText}>Piscine</Text>
                                 </TouchableOpacity>
                             </View>
@@ -205,6 +212,7 @@ export default function Profil() {
                         data={chooseCursus ? projectsCursus : projectsPiscine}
                         keyExtractor={(item, index) => index.toString()}
                         renderItem={renderProjectItem}
+                        ref={flatListRef}
                         nestedScrollEnabled={true}
                     />
 
@@ -219,6 +227,8 @@ export default function Profil() {
                         nestedScrollEnabled={true}
                     />
                 </View>
+
+                
             </View>
             </ScrollView>
     );
