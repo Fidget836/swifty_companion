@@ -13,6 +13,8 @@ L'objectif principal de ce projet est de créer une interface mobile interactive
 
 Lancer le projet :
   - git clone git@github.com:Fidget836/swifty_companion.git
+  - cd swifty_companion
+  - npm install
   - curl -X POST --data "grant_type=client_credentials&client_id=MY_AWESOME_UID&client_secret=MY_AWESOME_SECRET" https://api.intra.42.fr/oauth/token
   - Remplacez "MY_AWESOME_UID" et "MY_AWESOME_SECRET" par vos clés API 42
   - vim .env
