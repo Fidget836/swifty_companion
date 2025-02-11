@@ -47,7 +47,7 @@ export default function Index() {
           placeholder="Nom du profil"
           placeholderTextColor="#E3E3E3"
         />
-        <TouchableOpacity style={styles.inputButton} onPress={GoToProfil}>
+        <TouchableOpacity style={styles.inputButton} onPress={GoToProfil} >
           <Image
             source={require("../assets/images/search.png")}
             style={styles.buttonImage}

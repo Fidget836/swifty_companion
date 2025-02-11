@@ -1,4 +1,4 @@
-import { View, ScrollView, Text, StyleSheet, Image, FlatList, TouchableOpacity, LogBox } from "react-native";
+import { View, ScrollView, Text, StyleSheet, Image, FlatList, TouchableOpacity } from "react-native";
 import { useEffect, useState, useRef } from "react";
 import { Link, useRouter } from "expo-router";
 import { useSearchParams } from "expo-router/build/hooks";
@@ -16,14 +16,14 @@ interface Skill {
     level: number;
 }
 
-LogBox.ignoreAllLogs(true);
-
 export default function Profil() {
     const router = useRouter();
     const profilName = useSearchParams().get('profilName');
     const [login, setLogin] = useState('');
     const [level, setLevel] = useState<number>(0);
+    const [levelPiscine, setLevelPiscine] = useState<number>(0);
     const [nextLevel, setNextLevel] = useState<number>(0);
+    const [nextLevelPiscine, setNextLevelPiscine] = useState<number>(0);
     const [email, setEmail] = useState('');
     const [wallet, setWallet] = useState('');
     const [correctionPoint, setCorrectionPoint] = useState<number>(0);
@@ -61,9 +61,14 @@ export default function Profil() {
                     setWallet(data.wallet)
                     setProfilPicture(data.image?.link)
                     const level = data.cursus_users?.[1]?.level;
+                    const levelPiscine = data.cursus_users?.[0]?.level;
+                    
                     const currentLevel = isNaN(parseFloat(level)) ? 0 : parseFloat(level);
+                    const currentLevelPiscine = isNaN(parseFloat(levelPiscine)) ? 0 : parseFloat(levelPiscine);
                     setLevel(Math.floor(currentLevel));
+                    setLevelPiscine(Math.floor(currentLevelPiscine));
                     setNextLevel((currentLevel - Math.floor(currentLevel)) * 100);
+                    setNextLevelPiscine((currentLevelPiscine - Math.floor(currentLevelPiscine)) * 100);
                     setFullName(data.usual_full_name);
                     setCorrectionPoint(data.correction_point);
 
@@ -78,9 +83,10 @@ export default function Profil() {
                     for (let skill of data.cursus_users[0].skills) {
                         setSkillsPiscine(prevSkill => [...prevSkill, {name: skill.name, level: skill.level}]);
                     }
-
-                    for (let skill of data.cursus_users[1].skills) {
-                        setSkillsCursus(prevSkill => [...prevSkill, {name: skill.name, level: skill.level}]);
+                    if (data.cursus_users?.[1]) {
+                        for (let skill of data.cursus_users[1].skills) {
+                            setSkillsCursus(prevSkill => [...prevSkill, {name: skill.name, level: skill.level}]);
+                        }
                     }
                 }
             } catch (error) {
@@ -144,7 +150,7 @@ export default function Profil() {
 
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <View style={styles.headerContainer}>
                 <Link href="/" style={styles.headerText}>❮❮ Accueil</Link>
                 <Text style={styles.headerText}>Profil</Text>
@@ -154,11 +160,12 @@ export default function Profil() {
                 <View style={styles.profilTopContainer}>
                     {profilPicture ? (
                         <Image
-                        source={{ uri: profilPicture }} // Affichage de l'image avec une URL valide
-                        style={styles.profileImage} // Style de l'image
+                        source={{ uri: profilPicture }}
+                        style={styles.profileImage}
+                        resizeMode="cover"
                         />
                     ) : (
-                        <Text style={styles.profilText}>Image non disponible</Text> // Message fallback
+                        <Text style={styles.profilText}>Image non disponible</Text>
                     )}
 
                     <View style={styles.nameContainer}>
@@ -172,11 +179,23 @@ export default function Profil() {
 
 
                 <View style={styles.profilMiddleContainer}>
-                    <Text style={styles.levelText}>{ level }</Text>
-                    <View style={styles.barreLevel}>
-                        <View style={[styles.progressBarreLevel, {width: `${nextLevel}%`}]}></View>
-                    </View>
-                    
+                    {chooseCursus ? (
+                        <>
+                        <Text style={styles.levelText}>{ level }</Text>
+                        <View style={styles.barreLevel}>
+                            <View style={[styles.progressBarreLevel, {width: `${nextLevel}%`}]}></View>
+                        </View>
+                        </>
+                    ) : (
+                        <>
+                        <Text style={styles.levelText}>{ levelPiscine }</Text>
+                        <View style={styles.barreLevel}>
+                            <View style={[styles.progressBarreLevel, {width: `${nextLevelPiscine}%`}]}></View>
+                        </View>
+                        </>
+                    )
+                    }
+
                 </View>
 
 
@@ -195,40 +214,107 @@ export default function Profil() {
                         <View style={styles.chooseCursus}>
 
                             <View style={chooseCursus ? styles.activateCursus : styles.desactivateCursus}>
-                                <TouchableOpacity onPress={() => setNewChooseCursus(true)}>
+                                <TouchableOpacity onPress={() => setNewChooseCursus(true)} activeOpacity={1}>
                                 <Text style={styles.profilText}>42 Cursus</Text>
                                 </TouchableOpacity>
                             </View>
 
                             <View style={chooseCursus ? styles.desactivatePiscine : styles.activatePiscine}>
-                                <TouchableOpacity onPress={() => setNewChooseCursus(false)}>
+                                <TouchableOpacity onPress={() => setNewChooseCursus(false)} activeOpacity={1}>
                                 <Text style={styles.profilText}>Piscine</Text>
                                 </TouchableOpacity>
                             </View>
 
                         </View>
 
-                    <FlatList
-                        data={chooseCursus ? projectsCursus : projectsPiscine}
-                        keyExtractor={(item, index) => index.toString()}
-                        renderItem={renderProjectItem}
-                        ref={flatListRef}
-                        nestedScrollEnabled={true}
-                    />
+                        {chooseCursus ? (
+                        projectsCursus && projectsCursus.length > 0 ? (
+                            projectsCursus.map((item, index) => (
+                                <View key={index} style={styles.projectItem}>
+                                    <View style={styles.projectItemTop}>
+                                        <Text style={styles.profilText}>{item.name || "Unknown Project"}</Text>
+                                        <Text style={styles.profilText}>
+                                            Status: {item.validated === true ? "Réussi ✔" : item.final_mark === null ? "En attente ⏳" : "Échoué ✘"}
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.projectItemBottom}>
+                                        <Text style={styles.profilTextBarre}>{item.final_mark || "0"}</Text>
+                                        <View style={styles.barreLevel}>
+                                            <View style={[styles.progressBarreLevel, { width: `${item.final_mark ?? 0}%` }]}></View>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.profilText}>No projects available</Text>
+                        )
+                    ) : (
+                        projectsPiscine && projectsPiscine.length > 0 ? (
+                            projectsPiscine.map((item, index) => (
+                                <View key={index} style={styles.projectItem}>
+                                    <View style={styles.projectItemTop}>
+                                        <Text style={styles.profilText}>{item.name || "Unknown Project"}</Text>
+                                        <Text style={styles.profilText}>
+                                            Status: {item.validated === true ? "Réussi ✔" : item.final_mark === null ? "En attente ⏳" : "Échoué ✘"}
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.projectItemBottom}>
+                                        <Text style={styles.profilTextBarre}>{item.final_mark || "0"}</Text>
+                                        <View style={styles.barreLevel}>
+                                            <View style={[styles.progressBarreLevel, { width: `${item.final_mark ?? 0}%` }]}></View>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.profilText}>No projects available</Text>
+                        )
+                    )}
 
                 </View>
 
                 <View style={styles.skillsContainer}>
                     <Text style={styles.skillText}>Skills</Text>
-                    <FlatList
-                        data={chooseCursus ? skillsCursus : skillsPiscine}
-                        keyExtractor={(item, index) => index.toString()}
-                        renderItem={renderSkillItem}
-                        nestedScrollEnabled={true}
-                    />
+                    {chooseCursus ? (
+                        skillsCursus && skillsCursus.length > 0 ? (
+                            skillsCursus.map((item, index) => (
+                                <View key={index} style={styles.skillItem}>
+                                    <Text style={styles.skillSpecialText}>{item.name || "Unknown Skill"}</Text>
+
+                                    <View style={styles.projectItemBottom}>
+                                        <Text style={styles.profilTextBarre}>{Math.floor(item.level) || "0"}</Text>
+                                        <View style={styles.barreLevel}>
+                                            <View style={[styles.progressBarreLevel, { width: `${(item.level - Math.floor(item.level)) * 100}%` }]}></View>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.profilText}>No skills available</Text>
+                        )
+                    ) : (
+                        skillsPiscine && skillsPiscine.length > 0 ? (
+                            skillsPiscine.map((item, index) => (
+                                <View key={index} style={styles.skillItem}>
+                                    <Text style={styles.skillSpecialText}>{item.name || "Unknown Skill"}</Text>
+
+                                    <View style={styles.projectItemBottom}>
+                                        <Text style={styles.profilTextBarre}>{Math.floor(item.level) || "0"}</Text>
+                                        <View style={styles.barreLevel}>
+                                            <View style={[styles.progressBarreLevel, { width: `${(item.level - Math.floor(item.level)) * 100}%` }]}></View>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.profilText}>No skills available</Text>
+                        )
+                    )}
                 </View>
 
-                
+
             </View>
             </ScrollView>
     );
@@ -314,7 +400,6 @@ const styles = StyleSheet.create({
         width: 75,
         height: 75,
         borderRadius: 50,
-        resizeMode: 'cover'
     },
     barreLevel: {
         width: "85%",
@@ -342,13 +427,11 @@ const styles = StyleSheet.create({
     },
     projectsContainer: {
         width: "100%",
-        height:  360,
         alignItems: "center",
         marginTop: 15,
     },
     skillsContainer: {
         width: "100%",
-        height:  360,
         alignItems: "center",
         marginTop: 25,
     },
